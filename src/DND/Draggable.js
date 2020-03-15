@@ -41,17 +41,21 @@ export default class Draggable extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener("mouseup", this.onMouseUp);
-    window.addEventListener("mousemove", this.onMouseMove);
-    window.addEventListener("touchend", this.onTouchEnd);
-    window.addEventListener("touchmove", this.onTouchMove);
+    document.addEventListener("mouseup", this.onMouseUp);
+    document.addEventListener("mouseleave", this.onMouseUp);
+    document.addEventListener("mousemove", this.onMouseMove);
+    document.addEventListener("touchend", this.onTouchEnd);
+    document.addEventListener("touchleave", this.onTouchEnd);
+    document.addEventListener("touchmove", this.onTouchMove);
   }
 
   componentWillUnmount() {
-    window.removeEventListener("mouseup", this.onMouseUp);
-    window.removeEventListener("mousemove", this.onMouseMove);
-    window.removeEventListener("touchend", this.onTouchEnd);
-    window.removeEventListener("touchmove", this.onTouchMove);
+    document.removeEventListener("mouseup", this.onMouseUp);
+    document.removeEventListener("mouseleave", this.onMouseUp);
+    document.removeEventListener("mousemove", this.onMouseMove);
+    document.removeEventListener("touchend", this.onTouchEnd);
+    document.removeEventListener("touchleave", this.onTouchEnd);
+    document.removeEventListener("touchmove", this.onTouchMove);
   }
 
   start(x, y) {

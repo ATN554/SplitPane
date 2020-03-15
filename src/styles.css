@@ -1,8 +1,14 @@
-.layer {
-  height: 50px; /* Высота блока */
-  width: 150px; /* Ширина блока */
-  overflow: scroll; /* Добавляем полосы прокрутки */
-  background: #fc0; /* Цвет фона */
-  padding: 7px; /* Поля вокруг текста */
-  border: 1px solid #333; /* Параметры рамки */
- }
+hr {
+  border: none;
+  height: 1px;
+  margin-top: 2px;
+  background: rgb(35, 59, 26);
+  background-image: -webkit-linear-gradient(left, #fff, rgb(35, 59, 26), #fff);
+  background-image: -moz-linear-gradient(left, #fff, rgb(35, 59, 26), #fff);
+  background-image: -ms-linear-gradient(left, #fff, rgb(35, 59, 26), #fff);
+  background-image: -o-linear-gradient(left, #fff, rgb(35, 59, 26), #fff);
+}
+
+.splitpane-resizer {
+  height: 5px;
+}

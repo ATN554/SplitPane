@@ -5,27 +5,30 @@ export default class SplitPane extends React.Component {
   constructor(props) {
     super(props);
 
+    let resizer = this.props.resizer ? this.props.resizer : <hr />;
     let elements = this.props.children;
     let length = elements.length * 2 - 1;
     let modElements = [];
     for (let i = 0; i < length; i++) {
       if (i % 2 === 0) {
-        let child = elements[i];
+        let idx = i / 2;
+        let child = elements[idx];
         modElements.push(
           <div 
-            id={"splitpane-container-" + i}
-            key={"splitpane-container-" + i}
+            id={"splitpane-container-" + idx}
+            key={"splitpane-container-" + idx}
             className="splitpane-container"
             style={{overflow: "auto"}}>
             {child}
           </div>
         );
       } else {
+        let idx = (i-1) / 2;
         modElements.push(
           <Draggable
-            id={"splitpane-resizer-" + i}
-            key={"splitpane-resizer-" + i}
-            type="div"
+            id={"splitpane-resizer-" + idx}
+            key={"splitpane-resizer-" + idx}
+            type={"div"}
             showClone={false}
             className="splitpane-resizer"
             style={{cursor: 'row-resize', userSelect: 'none'}}
@@ -36,7 +39,7 @@ export default class SplitPane extends React.Component {
             onDragCancel={(idFrom, x, y) => {this.onDragStop(idFrom, x, y);}}
             allowMove={(idFrom, xs, ys, xe, ye) => {return this.allowMove(idFrom, xs, ys, xe, ye);}}
           >
-            {this.props.resizer}
+            {resizer}
           </Draggable>
         );
       }
