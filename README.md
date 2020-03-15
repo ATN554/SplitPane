@@ -1,2 +1,0 @@
-# SplitPane
-Created with CodeSandbox
