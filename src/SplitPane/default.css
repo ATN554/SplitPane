@@ -1,0 +1,43 @@
+.splitpane {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+.splitpane-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.splitpane-resizer {
+  height: 5px;
+}
+
+.resizer {
+  position: relative;
+  border-top: 1px dashed rgb(35, 59, 26);
+  border-bottom: 1px dashed rgb(35, 59, 26);
+  height: 3px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  z-index: 1;
+}
+
+.resizer:hover,
+.resizer:focus,
+.resizer:active {
+  height: 5px;
+}
+
+.resizer-icon {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  z-index: 1;
+}

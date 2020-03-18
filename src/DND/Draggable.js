@@ -8,8 +8,10 @@ export default class Draggable extends React.Component {
 
     let axis = this.props.axis === undefined ? "both" : this.props.axis;
     let enabled = this.props.enabled === undefined ? true : this.props.enabled;
-    let showClone = this.props.showClone !== undefined ? this.props.showClone : true;
-    let cloneOpacity = this.props.cloneOpacity !== undefined ? this.props.cloneOpacity : 0.8;
+    let showClone =
+      this.props.showClone !== undefined ? this.props.showClone : true;
+    let cloneOpacity =
+      this.props.cloneOpacity !== undefined ? this.props.cloneOpacity : 0.8;
 
     this.state = {
       elements: this.props.children,
@@ -20,6 +22,7 @@ export default class Draggable extends React.Component {
       evtX: 0,
       evtY: 0,
       position: [0, 0],
+      deltaPos: [0, 0],
       size: [0, 0],
       innerShift: [0, 0],
       xAxisMove: axis === "horizontal" || axis === "both",
@@ -38,6 +41,8 @@ export default class Draggable extends React.Component {
     this.start = this.start.bind(this);
     this.stop = this.stop.bind(this);
     this.move = this.move.bind(this);
+
+    this.findPos = this.findPos.bind(this);
   }
 
   componentDidMount() {
@@ -58,15 +63,23 @@ export default class Draggable extends React.Component {
     document.removeEventListener("touchmove", this.onTouchMove);
   }
 
+  findPos(obj) {
+    let box = obj.getBoundingClientRect();
+    return [box.left + window.pageXOffset, box.top + window.pageYOffset];
+  }
+
   start(x, y) {
     if (this.state.enabled) {
       if (!this.state.isReadyForDrag && !this.state.isDraging) {
         let box = this.refs.refdnd.getBoundingClientRect();
         let cs = getComputedStyle(this.refs.refdnd);
-        let pos = [
-          box.x + window.pageXOffset - parseFloat(cs.marginLeft),
-          box.y + window.pageYOffset - parseFloat(cs.marginTop)
-        ];
+        let selfPos = this.findPos(this.refs.refdnd);
+        this.refs.refdndclone.style.left = selfPos[0] + "px";
+        this.refs.refdndclone.style.top = selfPos[1] + "px";
+        let clonePos = this.findPos(this.refs.refdndclone);
+        this.refs.refdndclone.style.left = "0px";
+        this.refs.refdndclone.style.top = "0px";
+        let deltaPos = [selfPos[0] - clonePos[0], selfPos[1] - clonePos[1]];
         let size = [
           box.width -
             parseFloat(cs.paddingLeft) -
@@ -79,18 +92,19 @@ export default class Draggable extends React.Component {
             parseFloat(cs.borderTopWidth) -
             parseFloat(cs.borderBottomWidth)
         ];
-        let _x = this.state.xAxisMove ? x : pos[0];
-        let _y = this.state.yAxisMove ? y : pos[1];
+        let _x = this.state.xAxisMove ? x : selfPos[0];
+        let _y = this.state.yAxisMove ? y : selfPos[1];
         this.setState({
           isReadyForDrag: true,
           isDraging: false,
           evtX: _x,
           evtY: _y,
-          position: pos,
+          position: selfPos,
+          deltaPos: deltaPos,
           size: size,
           innerShift: [
-            this.state.xAxisMove ? _x - pos[0] : 0,
-            this.state.yAxisMove ? _y - pos[1] : 0
+            this.state.xAxisMove ? _x - selfPos[0] : 0,
+            this.state.yAxisMove ? _y - selfPos[1] : 0
           ]
         });
       }
@@ -103,40 +117,35 @@ export default class Draggable extends React.Component {
         isReadyForDrag: false
       });
     } else if (this.state.isDraging) {
+      let endPos = [this.state.evtX, this.state.evtY];
       this.setState(
         {
-          isDraging: false
+          isDraging: false,
+          evtX: 0,
+          evtY: 0,
+          position: [0, 0],
+          deltaPos: [0, 0],
+          size: [0, 0],
+          innerShift: [0, 0]
         },
         function() {
-          let target = document.elementFromPoint(
-            this.state.evtX,
-            this.state.evtY
-          );
+          let target = document.elementFromPoint(endPos[0], endPos[1]);
           let idFrom = this.props.id;
           if (target) {
             let droppable = target.closest(".droppable");
             if (droppable) {
               let idTo = droppable.id;
               if (this.props.onDragEnd !== undefined) {
-                this.props.onDragEnd(
-                  idFrom,
-                  idTo,
-                  this.state.evtX,
-                  this.state.evtY
-                );
+                this.props.onDragEnd(idFrom, idTo, endPos[0], endPos[1]);
               }
             } else {
               if (this.props.onDragCancel !== undefined) {
-                this.props.onDragCancel(
-                  idFrom,
-                  this.state.evtX,
-                  this.state.evtY
-                );
+                this.props.onDragCancel(idFrom, endPos[0], endPos[1]);
               }
             }
           } else {
             if (this.props.onDragCancel !== undefined) {
-              this.props.onDragCancel(idFrom, this.state.evtX, this.state.evtY);
+              this.props.onDragCancel(idFrom, endPos[0], endPos[1]);
             }
           }
         }
@@ -166,7 +175,13 @@ export default class Draggable extends React.Component {
     } else if (this.state.isDraging) {
       let allowMove = true;
       if (this.props.allowMove !== undefined) {
-        allowMove = this.props.allowMove(this.props.id, this.state.evtX, this.state.evtY, _x, _y);
+        allowMove = this.props.allowMove(
+          this.props.id,
+          this.state.evtX,
+          this.state.evtY,
+          _x,
+          _y
+        );
       }
       if (allowMove) {
         this.setState(
@@ -232,33 +247,45 @@ export default class Draggable extends React.Component {
         ref: "refdnd",
         id: this.props.id,
         className: this.props.className,
-        style: {cursor: 'move', ...this.props.style},
+        style: { cursor: "move", ...this.props.style },
         onMouseDown: event => this.onMouseDown(event),
         onTouchStart: event => this.onTouchStart(event)
       },
       [
         this.props.children,
-        this.state.showClone && 
-        this.state.isDraging &&
-          React.createElement(
-            "div",
-            {
-              id: "dnd",
-              key: "dnd",
-              className: this.props.className,
-              style: {
-                ...this.props.style,
-                position: "absolute",
-                zIndex: 1000,
-                left: this.state.evtX - this.state.innerShift[0],
-                top: this.state.evtY - this.state.innerShift[1],
-                width: this.state.size[0] + "px",
-                height: this.state.size[1] + "px",
-                opacity: this.state.cloneOpacity
-              }
-            },
-            this.state.elements
-          )
+        React.createElement(
+          "div",
+          {
+            ref: "refdndclone",
+            id: "dnd",
+            key: "dnd",
+            className: this.props.className,
+            style: {
+              ...this.props.style,
+              position: "absolute",
+              visibility:
+                this.state.showClone && this.state.isDraging
+                  ? "visible"
+                  : "hidden",
+              margin: "0px",
+              zIndex: 1000,
+              left:
+                this.state.evtX +
+                this.state.deltaPos[0] -
+                this.state.innerShift[0] +
+                "px",
+              top:
+                this.state.evtY +
+                this.state.deltaPos[1] -
+                this.state.innerShift[1] +
+                "px",
+              width: this.state.size[0] + "px",
+              height: this.state.size[1] + "px",
+              opacity: this.state.cloneOpacity
+            }
+          },
+          this.state.elements
+        )
       ]
     );
   }
