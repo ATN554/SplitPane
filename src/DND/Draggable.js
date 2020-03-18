@@ -247,7 +247,7 @@ export default class Draggable extends React.Component {
         ref: "refdnd",
         id: this.props.id,
         className: this.props.className,
-        style: { cursor: "move", ...this.props.style },
+        style: { ...this.props.style },
         onMouseDown: event => this.onMouseDown(event),
         onTouchStart: event => this.onTouchStart(event)
       },

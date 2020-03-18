@@ -24,7 +24,7 @@ export default class SplitPane extends React.Component {
       if (i % 2 === 0) {
         let idx = i / 2;
         let child = elements[idx];
-        let style = { overflow: "auto" };
+        let style = {};
         if (
           this.props.heights !== undefined &&
           this.props.heights[idx] !== undefined
@@ -54,10 +54,6 @@ export default class SplitPane extends React.Component {
               type: "div",
               showClone: false,
               className: "splitpane-resizer",
-              style: {
-                cursor: "row-resize",
-                userSelect: "none"
-              },
               axis: "vertical",
               onDragStart: (idFrom, x, y) => {
                 this.onDragStart(idFrom, x, y);
