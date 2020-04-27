@@ -1,95 +1,162 @@
 import React from "react";
 import "./default.css";
+import getUID from "../UID/uid.js";
 import Draggable from "../DND/Draggable.js";
-import UnfoldMore from "@material-ui/icons/UnfoldMore";
 
+const defaultResizer = orientation => {
+  return React.createElement("div", {
+    className: "splitpane-resizer-line " + orientation
+  });
+};
+
+/**
+ * Сплит-панель
+ *
+ * Параметры:
+ * orientation - Один из "vertical" или "horizontal". По умолчанию "vertical".
+ * Расположение компонентов в виде колонки или строки.
+ *
+ * resizeMode - Один из "one" или "two". По умолчанию "one".
+ * Способ растяжения: one - только текущий элемент, two - текущий и следующий (если текущий увеличивает размер, то следующий уменьшает и наоборот)
+ *
+ * updateMode - Один из "onMove" или "onEnd". По умолчанию "onMove".
+ * Способ изменения размеров: onMove - в процессе перемещения разделителя, onEnd - после окончания перемещения разделителя.
+ *
+ * sizes - Массив [] с начальными линейными размерами элементов. По умолчанию undefined.
+ * Размер присваивается к высоте, если orientation = "vertical".
+ * Размер присваивается к ширине, если orientation = "horizontal".
+ * Может содрежать значение любого вида, поддерживаемого для css width и css height.
+ * Например для 3-х элементов: ["200px", "30%", "calc(40% - 2px)"]
+ * Все значения пересчитываются в % от размеров панели.
+ * Значение переданное в % не пересчитывается.
+ *
+ * resizer - Элемент выступающий в роли разделителя панели. По умолчанию defaultResizer(orientation).
+ *
+ * id - Уникальный идентификатор DOM. По умолчанию undefined.
+ *
+ * style - css стиль. По умолчанию undefined.
+ *
+ * React.children - список элементов панели
+ *
+ */
 export default class SplitPane extends React.Component {
   constructor(props) {
     super(props);
 
+    let saltId = getUID();
+    let orientation = ["vertical", "horizontal"].some(
+      el => el === this.props.orientation
+    )
+      ? this.props.orientation
+      : "vertical";
+    let resizeMode = ["one", "two"].some(el => el === this.props.resizeMode)
+      ? this.props.resizeMode
+      : "one";
+    let updateMode = ["onMove", "onEnd"].some(
+      el => el === this.props.updateMode
+    )
+      ? this.props.updateMode
+      : "onMove";
+
     let resizer = this.props.resizer
       ? this.props.resizer
-      : React.createElement(
-          "div",
-          { className: "resizer" },
-          React.createElement(UnfoldMore, {
-            className: "resizer-icon",
-            color: "secondary"
-          })
-        );
+      : defaultResizer(orientation);
     let elements = this.props.children;
-    let length = elements.length * 2 - 1;
+    let length = elements.length;
     let modElements = [];
-    for (let i = 0; i < length; i++) {
-      if (i % 2 === 0) {
-        let idx = i / 2;
-        let child = elements[idx];
-        let style = {};
-        if (
-          this.props.heights !== undefined &&
-          this.props.heights[idx] !== undefined
-        ) {
-          style.height = this.props.heights[idx];
+    let containerIds = [];
+    let resizerIds = [];
+    for (let idx = 0; idx < length; idx++) {
+      let child = elements[idx];
+      let style = {};
+      if (
+        this.props.sizes !== undefined &&
+        this.props.sizes[idx] !== undefined
+      ) {
+        if (orientation === "horizontal") {
+          style.width = this.props.sizes[idx];
+        } else {
+          style.height = this.props.sizes[idx];
         }
-        modElements.push(
-          React.createElement(
-            "div",
-            {
-              id: "splitpane-container-" + idx,
-              key: "splitpane-container-" + idx,
-              className: "splitpane-container",
-              style: style
+      }
+      let elementId = "splitpane-container-" + saltId + "-" + idx;
+      containerIds.push(elementId);
+      let resizerElement;
+      if (idx < length - 1) {
+        let resizerId = "splitpane-resizer-" + saltId + "-" + idx;
+        resizerIds.push(resizerId);
+        resizerElement = React.createElement(
+          Draggable,
+          {
+            id: resizerId,
+            key: resizerId,
+            type: "div",
+            showClone: updateMode === "onEnd",
+            className: "splitpane-resizer " + orientation,
+            axis: orientation,
+            onDragStart: (idFrom, x, y) => {
+              this.onDragStart(idFrom, x, y);
             },
-            child
-          )
+            onDragMove: (idFrom, x, y) => {
+              this.onDragMove(idFrom, x, y);
+            },
+            onDragEnd: (idFrom, idTo, x, y) => {
+              this.onDragStop(idFrom, x, y);
+            },
+            onDragCancel: (idFrom, x, y) => {
+              this.onDragStop(idFrom, x, y);
+            },
+            allowMove: (idFrom, xs, ys, xe, ye) => {
+              return this.allowMove(idFrom, xs, ys, xe, ye);
+            }
+          },
+          resizer
         );
       } else {
-        let idx = (i - 1) / 2;
-        modElements.push(
-          React.createElement(
-            Draggable,
-            {
-              id: "splitpane-resizer-" + idx,
-              key: "splitpane-resizer-" + idx,
-              type: "div",
-              showClone: false,
-              className: "splitpane-resizer",
-              axis: "vertical",
-              onDragStart: (idFrom, x, y) => {
-                this.onDragStart(idFrom, x, y);
-              },
-              onDragMove: (idFrom, x, y) => {
-                this.onDragMove(idFrom, x, y);
-              },
-              onDragEnd: (idFrom, idTo, x, y) => {
-                this.onDragStop(idFrom, x, y);
-              },
-              onDragCancel: (idFrom, x, y) => {
-                this.onDragStop(idFrom, x, y);
-              },
-              allowMove: (idFrom, xs, ys, xe, ye) => {
-                return this.allowMove(idFrom, xs, ys, xe, ye);
-              }
-            },
-            resizer
-          )
-        );
+        resizerElement = undefined;
       }
-    }
 
-    let resizeMode = "one";
-    if (this.props.resizeMode === "two") {
-      resizeMode = "two";
+      let contentElement = [
+        React.createElement(
+          "div",
+          {
+            className: "splitpane-content " + orientation
+          },
+          child
+        )
+      ];
+      if (resizerElement) {
+        contentElement.push(resizerElement);
+      }
+
+      modElements.push(
+        React.createElement(
+          "div",
+          {
+            id: elementId,
+            key: elementId,
+            className: "splitpane-container " + orientation,
+            style: style
+          },
+          ...contentElement
+        )
+      );
     }
 
     this.state = {
+      saltId: saltId,
+      paneElement: undefined,
       elements: modElements,
+      containerIds: containerIds,
+      resizerIds: resizerIds,
+      orientation: orientation,
       resizeMode: resizeMode,
-      pageY: undefined,
+      updateMode: updateMode,
+      pagePos: undefined,
       curDiv: undefined,
-      curDivHeight: undefined,
+      curDivSize: undefined,
       nextDiv: undefined,
-      nextDivHeight: undefined
+      nextDivSize: undefined
     };
 
     this.onDragStart = this.onDragStart.bind(this);
@@ -99,82 +166,157 @@ export default class SplitPane extends React.Component {
   }
 
   onDragStart(idFrom, x, y) {
-    let elem = document.getElementById(idFrom);
-    let curDiv = elem.previousElementSibling;
-    let cs1 = getComputedStyle(curDiv);
-    let curDivHeight =
-      curDiv.offsetHeight -
-      parseFloat(cs1.paddingTop) -
-      parseFloat(cs1.paddingBottom) -
-      parseFloat(cs1.borderTopWidth) -
-      parseFloat(cs1.borderBottomWidth);
+    let resizerIdx = this.state.resizerIds.findIndex(id => id === idFrom);
+    let curDiv = document.getElementById(this.state.containerIds[resizerIdx]);
+    let curDivSize = [
+      parseFloat(curDiv.style.width),
+      parseFloat(curDiv.style.height)
+    ];
     let nextDiv =
-      this.state.resizeMode === "two" ? elem.nextElementSibling : undefined;
-    let nextDivHeight = undefined;
+      this.state.resizeMode === "two" ? curDiv.nextElementSibling : undefined;
+    let nextDivSize = undefined;
     if (nextDiv) {
-      let cs2 = getComputedStyle(nextDiv);
-      nextDivHeight =
-        nextDiv.offsetHeight -
-        parseFloat(cs2.paddingTop) -
-        parseFloat(cs2.paddingBottom) -
-        parseFloat(cs2.borderTopWidth) -
-        parseFloat(cs2.borderBottomWidth);
+      nextDivSize = [
+        parseFloat(nextDiv.style.width),
+        parseFloat(nextDiv.style.height)
+      ];
     }
     this.setState({
-      pageY: y,
+      pagePos: [x, y],
       curDiv: curDiv,
-      curDivHeight: curDivHeight,
+      curDivSize: curDivSize,
       nextDiv: nextDiv,
-      nextDivHeight: nextDivHeight
+      nextDivSize: nextDivSize
     });
   }
 
   onDragMove(idFrom, x, y) {
-    let curDiv = this.state.curDiv;
-    if (curDiv) {
-      let diffY = y - this.state.pageY;
-      curDiv.style.height = this.state.curDivHeight + diffY + "px";
-      let nextDiv = this.state.nextDiv;
-      if (nextDiv) {
-        nextDiv.style.height = this.state.nextDivHeight - diffY + "px";
+    if (this.state.updateMode === "onMove") {
+      let curDiv = this.state.curDiv;
+      if (curDiv) {
+        let paneSize = [
+          this.state.paneElement.clientWidth,
+          this.state.paneElement.clientHeight
+        ];
+        if (this.state.orientation === "horizontal") {
+          let diffX = x - this.state.pagePos[0];
+          let diffProc = (diffX * 100) / paneSize[0];
+          curDiv.style.width = this.state.curDivSize[0] + diffProc + "%";
+          let nextDiv = this.state.nextDiv;
+          if (nextDiv) {
+            nextDiv.style.width = this.state.nextDivSize[0] - diffProc + "%";
+          }
+        } else {
+          let diffY = y - this.state.pagePos[1];
+          let diffProc = (diffY * 100) / paneSize[1];
+          curDiv.style.height = this.state.curDivSize[1] + diffProc + "%";
+          let nextDiv = this.state.nextDiv;
+          if (nextDiv) {
+            nextDiv.style.height = this.state.nextDivSize[1] - diffProc + "%";
+          }
+        }
       }
     }
   }
 
   onDragStop(idFrom, x, y) {
+    if (this.state.updateMode === "onEnd") {
+      let curDiv = this.state.curDiv;
+      if (curDiv) {
+        let paneSize = [
+          this.state.paneElement.clientWidth,
+          this.state.paneElement.clientHeight
+        ];
+        if (this.state.orientation === "horizontal") {
+          let diffX = x - this.state.pagePos[0];
+          let diffProc = (diffX * 100) / paneSize[0];
+          curDiv.style.width = this.state.curDivSize[0] + diffProc + "%";
+          let nextDiv = this.state.nextDiv;
+          if (nextDiv) {
+            nextDiv.style.width = this.state.nextDivSize[0] - diffProc + "%";
+          }
+        } else {
+          let diffY = y - this.state.pagePos[1];
+          let diffProc = (diffY * 100) / paneSize[1];
+          curDiv.style.height = this.state.curDivSize[1] + diffProc + "%";
+          let nextDiv = this.state.nextDiv;
+          if (nextDiv) {
+            nextDiv.style.height = this.state.nextDivSize[1] - diffProc + "%";
+          }
+        }
+      }
+    }
+
     this.setState({
-      pageY: undefined,
+      pagePos: undefined,
       curDiv: undefined,
-      curDivHeight: undefined,
+      curDivSize: undefined,
       nextDiv: undefined,
-      nextDivHeight: undefined
+      nextDivSize: undefined
     });
   }
 
   allowMove(idFrom, xs, ys, xe, ye) {
     let curDiv = this.state.curDiv;
     if (curDiv) {
-      let diffY = ye - this.state.pageY;
-      let newHeight = this.state.curDivHeight + diffY;
-      if (newHeight > 0) {
-        let nextDiv = this.state.nextDiv;
-        if (nextDiv) {
-          newHeight = this.state.nextDivHeight - diffY;
-          return newHeight > 0;
-        } else {
-          return true;
+      let paneSize = [
+        this.state.paneElement.clientWidth,
+        this.state.paneElement.clientHeight
+      ];
+      if (this.state.orientation === "horizontal") {
+        let diffX = xe - this.state.pagePos[0];
+        let diffProc = (diffX * 100) / paneSize[0];
+        let newWidth = this.state.curDivSize[0] + diffProc;
+        if (newWidth > 1) {
+          let nextDiv = this.state.nextDiv;
+          if (nextDiv) {
+            newWidth = this.state.nextDivSize[0] - diffProc;
+            return newWidth > 1;
+          } else {
+            return true;
+          }
+        }
+      } else {
+        let diffY = ye - this.state.pagePos[1];
+        let diffProc = (diffY * 100) / paneSize[1];
+        let newHeight = this.state.curDivSize[1] + diffProc;
+        if (newHeight > 1) {
+          let nextDiv = this.state.nextDiv;
+          if (nextDiv) {
+            newHeight = this.state.nextDivSize[1] - diffProc;
+            return newHeight > 1;
+          } else {
+            return true;
+          }
         }
       }
     }
     return false;
   }
 
+  componentDidMount() {
+    let pane = document.getElementById(this.props.id || this.state.saltId);
+    this.setState({ paneElement: pane });
+    this.state.containerIds.forEach((elId, elIdx) => {
+      let el = document.getElementById(elId);
+      if (this.state.orientation === "horizontal") {
+        if (!el.style.width.endsWith("%")) {
+          el.style.width = (el.clientWidth * 100) / pane.clientWidth + "%";
+        }
+      } else {
+        if (!el.style.height.endsWith("%")) {
+          el.style.height = (el.clientHeight * 100) / pane.clientHeight + "%";
+        }
+      }
+    });
+  }
+
   render() {
     return React.createElement(
       "div",
       {
-        id: this.props.id,
-        className: "splitpane",
+        id: this.props.id || this.state.saltId,
+        className: "splitpane " + this.state.orientation,
         style: this.props.style
       },
       this.state.elements

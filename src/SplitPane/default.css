@@ -7,39 +7,81 @@
   overflow: auto;
 }
 
+.splitpane.horizontal {
+  white-space: nowrap;
+}
+
 .splitpane-container {
   position: relative;
+  overflow: visible;
+  height: 100%;
+}
+
+.splitpane-container.horizontal {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.splitpane-content {
+  position: relative;
+  white-space: normal;
   overflow: auto;
 }
 
+.splitpane-content.horizontal {
+  display: inline-block;
+  vertical-align: top;
+  width: calc(100% - 12px);
+  height: 100%;
+}
+
+.splitpane-content.horizontal:last-child {
+  width: 100%;
+}
+
+.splitpane-content.vertical {
+  height: calc(100% - 12px);
+}
+
+.splitpane-content.vertical:last-child {
+  height: 100%;
+}
+
 .splitpane-resizer {
-  height: 5px;
-  cursor: row-resize;
-  user-select: none;
-}
-
-.resizer {
   position: relative;
-  border-top: 1px dashed rgb(35, 59, 26);
-  border-bottom: 1px dashed rgb(35, 59, 26);
-  height: 3px;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  user-select: none;
+  overflow: visible;
+}
+
+.splitpane-resizer.horizontal {
+  display: inline-block;
+  vertical-align: top;
+  height: 100%;
+}
+
+.splitpane-resizer-line {
+  position: relative;
+  background: transparent;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAF0lEQVR42mN4/f/1fwZ0UDWzC1MQp0oAzgMM4YLm6HcAAAAASUVORK5CYII= ");
   z-index: 1;
 }
 
-.resizer:hover,
-.resizer:focus,
-.resizer:active {
-  height: 5px;
+.splitpane-resizer-line.horizontal {
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+  background-repeat: repeat-y;
+  background-position-x: center;
+  border-left: 1px solid rgb(35, 59, 26);
+  border-right: 1px solid rgb(35, 59, 26);
 }
 
-.resizer-icon {
-  position: absolute;
-  top: 0px;
-  bottom: 0px;
-  left: 0;
-  right: 0;
-  margin: auto;
-  z-index: 1;
+.splitpane-resizer-line.vertical {
+  width: 100%;
+  height: 10px;
+  cursor: ns-resize;
+  background-repeat: repeat-x;
+  background-position-y: center;
+  border-top: 1px solid rgb(35, 59, 26);
+  border-bottom: 1px solid rgb(35, 59, 26);
 }
